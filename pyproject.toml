@@ -1,0 +1,18 @@
+[project]
+name = "datafalk"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "fastapi>=0.116.1",
+    "jinja2>=3.1.6",
+    "llvmlite>=0.43.0",
+    "numba>=0.60.0",
+    "python-multipart>=0.0.20",
+    "redis>=6.2.0",
+    "rembg>=2.0.61",
+    "rq>=2.4.1",
+    "uvicorn[standard]>=0.35.0",
+]

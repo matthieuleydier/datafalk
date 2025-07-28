@@ -1,0 +1,29 @@
+# version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    volumes:
+      - ./app:/app  # utile si tu veux que les modifs locales se refl
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    volumes:
+      - ./app:/app  # utile si tu veux que les modifs locales se reflètent sans rebuild
+    depends_on:
+      - redis
+
+volumes:
+  redis-data:

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photofalk Background Removal Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+    }
+    h1 {
+      color: #333;
+    }
+    #upload-form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #status {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    #images {
+      display: none;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .image-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .image-container img {
+      max-width: 400px;
+      max-height: 400px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px;
+    }
+    #progress-bar {
+      width: 100%;
+      background-color: #f3f3f3;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    #progress {
+      width: 0%;
+      height: 20px;
+      background-color: #007BFF;
+      border-radius: 4px;
+      text-align: center;
+      line-height: 20px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Upload Image for Background Removal</h1>
+  <form id="upload-form" enctype="multipart/form-data">
+    <input type="file" id="image-file" name="file" accept="image/*" required>
+    <button type="submit">Remove Background</button>
+  </form>
+  <div id="status"></div>
+  <div id="progress-bar"><div id="progress">0%</div></div>
+  <div id="images">
+    <div class="image-container">
+      <div>
+        <h2>Original Image</h2>
+        <img id="original" src="" alt="Original">
+      </div>
+      <div>
+        <h2>Processed Image</h2>
+        <img id="processed" src="" alt="Processed">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const statusDiv = document.getElementById("status");
+    const imagesDiv = document.getElementById("images");
+    const originalImg = document.getElementById("original");
+    const processedImg = document.getElementById("processed");
+    const imageFileInput = document.getElementById("image-file");
+    const progressBar = document.getElementById("progress");
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      statusDiv.textContent = "Uploading image...";
+      imagesDiv.style.display = "none";
+      progressBar.style.width = "0%";
+      progressBar.textContent = "0%";
+
+      const file = imageFileInput.files[0];
+      if (!file) {
+        statusDiv.textContent = "Please select an image file.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        statusDiv.textContent = "Uploading image...";
+        progressBar.style.width = "20%";
+        progressBar.textContent = "20%";
+
+        const res = await fetch("/remove-bg", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Upload failed");
+
+        statusDiv.textContent = "Image uploaded, processing...";
+        progressBar.style.width = "40%";
+        progressBar.textContent = "40%";
+
+        originalImg.src = URL.createObjectURL(file);
+        imagesDiv.style.display = "block";
+
+        const job_id = data.job_id;
+        let status = "";
+
+        while (status !== "finished" && status !== "failed") {
+          await new Promise(r => setTimeout(r, 2000));
+          const statusRes = await fetch(`/status/${job_id}`);
+          const statusData = await statusRes.json();
+          status = statusData.status;
+          statusDiv.textContent = `Status: ${status}`;
+
+          if (status === "processing") {
+            progressBar.style.width = "60%";
+            progressBar.textContent = "60%";
+          }
+        }
+
+        if (status === "finished") {
+          processedImg.src = `/result/${job_id}`;
+          statusDiv.textContent = "Processing complete!";
+          progressBar.style.width = "100%";
+          progressBar.textContent = "100%";
+        } else {
+          statusDiv.textContent = "Processing failed.";
+        }
+      } catch (err) {
+        statusDiv.textContent = `Error: ${err.message}`;
+      }
+    };
+  </script>
+</body>
+</html>
