@@ -6,3 +6,4 @@ rembg
 jinja2
 python-multipart
 aiofiles
+onnxruntime
